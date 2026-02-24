@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cars Recognizer</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>cars-recognizer</h1>
+  <span class="ver">v1.0.0 &middot; <a href="/docs" target="_blank">api docs</a></span>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" data-tab="workspace">workspace</button>
+  <button class="nav-btn" data-tab="results">results</button>
+  <button class="nav-btn" data-tab="report">report</button>
+</div>
+
+<div class="main">
+
+<!-- Log -->
+<div class="log-wrap" id="logWrap">
+  <div class="log-header" id="logHeader">
+    <span>output</span>
+    <button class="log-toggle" id="logToggle" title="Collapse/expand">&#x25B2;</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- Workspace = Upload + Files + Recognize -->
+<div class="section active" id="tab-workspace">
+
+  <!-- Upload -->
+  <h2>upload images</h2>
+  <div class="dropzone" id="dropzone">
+    <p>Drop image(s) here or click to select</p>
+    <span class="hint">jpg, jpeg, png &middot; max 10 MB</span>
+  </div>
+  <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" multiple>
+
+  <hr class="divider">
+
+  <!-- Files table -->
+  <h2>files</h2>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="btn" onclick="loadFiles()">refresh</button>
+    <span class="muted" id="unprocessedHint"></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>filename</th>
+        <th>size</th>
+        <th>uploaded</th>
+        <th>status</th>
+        <th>top prediction</th>
+        <th>actions</th>
+      </tr>
+    </thead>
+    <tbody id="filesBody"></tbody>
+  </table>
+
+  <hr class="divider">
+
+  <!-- Inference -->
+  <h2>recognize</h2>
+  <div class="infer-bar">
+    <label style="color:#777;">file id:</label>
+    <input id="inferIdInput" type="number" min="1" class="input">
+    <button class="btn btn-green" onclick="recognizeSingle()">recognize</button>
+    <span class="muted">&mdash; or &mdash;</span>
+    <button class="btn" onclick="recognizeBatch()">recognize all unprocessed</button>
+  </div>
+  <div id="inferResults"></div>
+
+</div>
+
+<!-- Results -->
+<div class="section" id="tab-results">
+  <h2>statistics &amp; export</h2>
+  <div style="margin-bottom:12px;display:flex;gap:10px;">
+    <button class="btn" onclick="loadStats()">refresh stats</button>
+    <button class="btn btn-green" onclick="downloadCSV()">export csv</button>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div id="topBrands"></div>
+</div>
+
+<!-- Report -->
+<div class="section" id="tab-report">
+  <h2>visualization report</h2>
+  <button class="btn mb" onclick="loadReport()">load report</button>
+  <iframe id="reportFrame" class="report-frame" style="display:none;"></iframe>
+</div>
+
+</div><!-- .main -->
+
+<script src="/static/app.js"></script>
+</body>
+</html>

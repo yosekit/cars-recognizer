@@ -10,6 +10,8 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
@@ -45,16 +47,14 @@ app.include_router(visualization.router)
 
 
 @app.get("/")
-async def root() -> dict:
-    """Корневой эндпоинт с информацией об API."""
-    return {
-        "name": "Cars Recognizer API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "description": "Загрузите изображение автомобиля и получите предсказание марки и модели.",
-    }
+async def root():
+    """Корневой эндпоинт — отдаёт фронтенд-страницу."""
+    return FileResponse("static/index.html")
 
 
 # Создание директории для загрузок при старте
 upload_dir = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(upload_dir, exist_ok=True)
+
+# Статические файлы (фронтенд) — монтируется последним
+app.mount("/static", StaticFiles(directory="static"), name="static")

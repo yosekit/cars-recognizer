@@ -49,15 +49,26 @@
     <button class="btn" onclick="loadFiles()">refresh</button>
     <span class="muted" id="unprocessedHint"></span>
   </div>
-  <table>
+  <table class="files-table">
+    <colgroup>
+      <col style="width:50px">
+      <col style="width:15%">
+      <col style="width:70px">
+      <col style="width:140px">
+      <col style="width:100px">
+      <col>
+      <col style="width:115px">
+      <col style="width:150px">
+    </colgroup>
     <thead>
       <tr>
-        <th>id</th>
-        <th>filename</th>
-        <th>size</th>
-        <th>uploaded</th>
+        <th class="sortable" data-sort="id">id</th>
+        <th class="sortable" data-sort="filename">filename</th>
+        <th class="sortable" data-sort="size">size</th>
+        <th class="sortable" data-sort="uploaded">uploaded</th>
         <th>status</th>
-        <th>top prediction</th>
+        <th class="sortable" data-sort="prediction">top prediction</th>
+        <th class="sortable" data-sort="confidence">confidence</th>
         <th>actions</th>
       </tr>
     </thead>

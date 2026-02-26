@@ -80,6 +80,101 @@ async function handleFiles(fileList) {
 }
 
 // --- Files ---
+let currentFiles = [];
+let sortCol = null;
+let sortAsc = true;
+
+function confidenceColor(pct) {
+  // gradient: red (0%) -> yellow (50%) -> green (100%)
+  if (pct <= 50) {
+    const r = 255;
+    const g = Math.round(255 * (pct / 50));
+    return `rgb(${r},${g},0)`;
+  }
+  const r = Math.round(255 * (1 - (pct - 50) / 50));
+  const g = 255;
+  return `rgb(${r},${g},0)`;
+}
+
+function getConfidence(f) {
+  if (!f.results || !f.results.length) return -1;
+  return (f.results[0].confidence || f.results[0].score) * 100;
+}
+
+function sortFiles(files, col, asc) {
+  const sorted = [...files];
+  sorted.sort((a, b) => {
+    let va, vb;
+    switch (col) {
+      case 'id': va = a.id; vb = b.id; break;
+      case 'filename': va = a.filename.toLowerCase(); vb = b.filename.toLowerCase(); break;
+      case 'size': va = a.size_bytes; vb = b.size_bytes; break;
+      case 'uploaded': va = new Date(a.upload_date).getTime(); vb = new Date(b.upload_date).getTime(); break;
+      case 'prediction':
+        va = (a.results && a.results.length) ? a.results[0].label.toLowerCase() : '';
+        vb = (b.results && b.results.length) ? b.results[0].label.toLowerCase() : '';
+        break;
+      case 'confidence': va = getConfidence(a); vb = getConfidence(b); break;
+      default: return 0;
+    }
+    if (va < vb) return asc ? -1 : 1;
+    if (va > vb) return asc ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+function renderFilesTable(files) {
+  const tbody = document.getElementById('filesBody');
+  tbody.innerHTML = files.map(f => {
+    const size = f.size_bytes < 1024*1024
+      ? (f.size_bytes / 1024).toFixed(1) + ' KB'
+      : (f.size_bytes / (1024*1024)).toFixed(2) + ' MB';
+    const date = new Date(f.upload_date).toLocaleString();
+    const status = f.processed
+      ? '<span style="color:#00ff41;">processed</span>'
+      : '<span style="color:#777;">pending</span>';
+    const label = f.results && f.results.length ? f.results[0].label : '-';
+    const conf = getConfidence(f);
+    const confCell = conf >= 0
+      ? `<span style="color:${confidenceColor(conf)}">${conf.toFixed(1)}%</span>`
+      : '<span class="muted">-</span>';
+    return `<tr>
+      <td>${f.id}</td>
+      <td>${esc(f.filename)}</td>
+      <td>${size}</td>
+      <td>${date}</td>
+      <td>${status}</td>
+      <td>${esc(label)}</td>
+      <td>${confCell}</td>
+      <td><div class="actions">
+        <button class="btn btn-sm" onclick="recognizeSingleById(${f.id})" title="Recognize">run</button>
+        <button class="btn btn-sm" onclick="reprocessFile(${f.id})" title="Reprocess">re</button>
+        <button class="btn btn-sm btn-red" onclick="deleteFile(${f.id})" title="Delete">rm</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll('#tab-workspace th.sortable').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortCol) {
+      th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+document.addEventListener('click', e => {
+  const th = e.target.closest('th.sortable');
+  if (!th || !currentFiles.length) return;
+  const col = th.dataset.sort;
+  if (sortCol === col) { sortAsc = !sortAsc; }
+  else { sortCol = col; sortAsc = true; }
+  updateSortIndicators();
+  renderFilesTable(sortFiles(currentFiles, sortCol, sortAsc));
+});
+
 async function loadFiles() {
   try {
     const res = await fetch(API + '/files/');
@@ -93,34 +188,11 @@ async function loadFiles() {
       files.length ? `${files.length} file(s), ${unproc} unprocessed` : '';
 
     if (!files.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted">No files uploaded yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="muted">No files uploaded yet.</td></tr>';
       return;
     }
-    tbody.innerHTML = files.map(f => {
-      const size = f.size_bytes < 1024*1024
-        ? (f.size_bytes / 1024).toFixed(1) + ' KB'
-        : (f.size_bytes / (1024*1024)).toFixed(2) + ' MB';
-      const date = new Date(f.upload_date).toLocaleString();
-      const status = f.processed
-        ? '<span style="color:#00ff41;">processed</span>'
-        : '<span style="color:#777;">pending</span>';
-      const top = f.results && f.results.length
-        ? `${f.results[0].label} (${((f.results[0].confidence || f.results[0].score) * 100).toFixed(1)}%)`
-        : '-';
-      return `<tr>
-        <td>${f.id}</td>
-        <td>${esc(f.filename)}</td>
-        <td>${size}</td>
-        <td>${date}</td>
-        <td>${status}</td>
-        <td>${esc(top)}</td>
-        <td class="actions">
-          <button class="btn btn-sm" onclick="recognizeSingleById(${f.id})" title="Recognize">run</button>
-          <button class="btn btn-sm" onclick="reprocessFile(${f.id})" title="Reprocess">re</button>
-          <button class="btn btn-sm btn-red" onclick="deleteFile(${f.id})" title="Delete">rm</button>
-        </td>
-      </tr>`;
-    }).join('');
+    currentFiles = files;
+    renderFilesTable(files);
   } catch (e) {
     log('Failed to load files: ' + e.message, 'err');
   }

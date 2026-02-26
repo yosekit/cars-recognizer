@@ -31,6 +31,20 @@ async def get_file(image_id: int) -> ImageMetadata:
     return image
 
 
+@router.delete("/")
+async def delete_all_files() -> dict:
+    """Удаление всех файлов и их метаданных."""
+    images = metadata_store.get_all()
+    count = 0
+    for image in images:
+        if os.path.exists(image.path):
+            os.remove(image.path)
+        metadata_store.delete_by_id(image.id)
+        count += 1
+    logger.info("Удалено всех файлов: %d", count)
+    return {"message": f"Удалено {count} файл(ов)."}
+
+
 @router.delete("/{image_id}")
 async def delete_file(image_id: int) -> dict:
     """Удаление файла и его метаданных.

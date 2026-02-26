@@ -210,6 +210,21 @@ async function deleteFile(id) {
   }
 }
 
+async function deleteAllFiles() {
+  if (!currentFiles.length) { log('No files to delete.', 'info'); return; }
+  if (!confirm(`Delete all ${currentFiles.length} file(s)?`)) return;
+  try {
+    const res = await fetch(API + '/files/', { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    const data = await res.json();
+    log(data.message, 'ok');
+    currentFiles = [];
+    loadFiles();
+  } catch (e) {
+    log('Delete all failed: ' + e.message, 'err');
+  }
+}
+
 async function reprocessFile(id) {
   try {
     const res = await fetch(API + '/files/' + id + '/reprocess', { method: 'POST' });
@@ -263,6 +278,7 @@ async function recognizeBatch() {
     loadFiles();
   } catch (e) {
     log('Batch inference failed: ' + e.message, 'err');
+    console.log(e.message);
   }
 }
 
